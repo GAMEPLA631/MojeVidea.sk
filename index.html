@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<title>StreamHub</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Inter;
+}
+
+body {
+  background: radial-gradient(circle at top, #111827, #05070d);
+  color: white;
+  overflow-x: hidden;
+}
+
+/* ===== TOPBAR ===== */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(15px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  font-weight: 800;
+  font-size: 20px;
+  color: #ff2d55;
+  letter-spacing: 1px;
+}
+
+.search input {
+  width: 300px;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  background: rgba(255,255,255,0.07);
+  color: white;
+}
+
+/* ===== LAYOUT ===== */
+.container {
+  display: flex;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 240px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid rgba(255,255,255,0.08);
+  padding: 20px;
+}
+
+.sidebar h3 {
+  margin-bottom: 15px;
+  color: #aaa;
+}
+
+.sidebtn {
+  display: block;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.sidebtn:hover {
+  background: rgba(255,45,85,0.2);
+  transform: translateX(5px);
+}
+
+/* ===== MAIN ===== */
+.main {
+  flex: 1;
+  padding: 20px;
+}
+
+/* ===== LOGIN PANEL ===== */
+.auth {
+  display: flex;
+  gap: 8px;
+}
+
+.auth input {
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255,255,255,0.07);
+  color: white;
+}
+
+.auth button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(45deg,#ff2d55,#ff7a18);
+  color: white;
+  cursor: pointer;
+}
+
+/* ===== UPLOAD ===== */
+.upload {
+  background: rgba(255,255,255,0.05);
+  padding: 15px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+  backdrop-filter: blur(12px);
+}
+
+.upload input, .upload button {
+  margin: 5px;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+}
+
+.upload button {
+  background: #ff2d55;
+  color: white;
+  cursor: pointer;
+}
+
+/* ===== VIDEO GRID ===== */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.card {
+  background: rgba(255,255,255,0.04);
+  border-radius: 15px;
+  overflow: hidden;
+  transition: 0.3s;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  border: 1px solid rgba(255,45,85,0.4);
+}
+
+.card video {
+  width: 100%;
+}
+
+.card h4 {
+  padding: 10px;
+}
+
+.small {
+  padding: 0 10px 10px;
+  color: #aaa;
+  font-size: 12px;
+}
+
+/* ===== ANIMÁCIE ===== */
+.card {
+  animation: fade 0.4s ease-in-out;
+}
+
+@keyframes fade {
+  from {opacity: 0; transform: translateY(10px);}
+  to {opacity: 1; transform: translateY(0);}
+}
+
+/* ===== MOBILE ===== */
+@media(max-width:900px){
+  .sidebar{display:none;}
+  .search input{width:150px;}
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">STREAMHUB</div>
+
+  <div class="search">
+    <input placeholder="Search videos...">
+  </div>
+
+  <div class="auth">
+    <input id="user" placeholder="user">
+    <input id="pass" type="password" placeholder="pass">
+    <button onclick="register()">Sign up</button>
+    <button onclick="login()">Login</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <h3>MENU</h3>
+  <div class="sidebtn">🔥 Trending</div>
+  <div class="sidebtn">🎮 Gaming</div>
+  <div class="sidebtn">📺 Live</div>
+  <div class="sidebtn">⚙ Settings</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- UPLOAD -->
+  <div class="upload">
+    <h3>Upload video</h3>
+    <input id="title" placeholder="Video title">
+    <input type="file" id="video">
+    <button onclick="upload()">Upload</button>
+  </div>
+
+  <!-- VIDEOS -->
+  <div class="grid" id="feed"></div>
+
+</div>
+
+</div>
+
+<script>
+const API = window.location.origin;
+let userLogged = "";
+
+/* REGISTER */
+async function register(){
+  await fetch(API+"/register",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      username: user(),
+      password: pass()
+    })
+  });
+  alert("Account created");
+}
+
+/* LOGIN */
+async function login(){
+  const res = await fetch(API+"/login",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      username: user(),
+      password: pass()
+    })
+  });
+
+  const data = await res.json();
+  userLogged = user();
+  alert("Logged in");
+  loadVideos();
+}
+
+/* UPLOAD */
+async function upload(){
+  const file = document.getElementById("video").files[0];
+  const title = document.getElementById("title").value;
+
+  const form = new FormData();
+  form.append("video", file);
+  form.append("title", title);
+  form.append("user", userLogged);
+
+  await fetch(API+"/upload",{
+    method:"POST",
+    body:form
+  });
+
+  loadVideos();
+}
+
+/* LOAD VIDEOS */
+async function loadVideos(){
+  const res = await fetch(API+"/videos");
+  const data = await res.json();
+
+  const feed = document.getElementById("feed");
+  feed.innerHTML = "";
+
+  data.reverse().forEach(v=>{
+    feed.innerHTML += `
+      <div class="card">
+        <video controls src="${API}/videos-files/${v.file}"></video>
+        <h4>${v.title}</h4>
+        <div class="small">by ${v.user}</div>
+      </div>
+    `;
+  });
+}
+
+function user(){ return document.getElementById("user").value; }
+function pass(){ return document.getElementById("pass").value; }
+
+loadVideos();
+</script>
+
+</body>
+</html
